@@ -1,4 +1,4 @@
-﻿package Pradanoia.filters;
+package Pradanoia.filters;
 
 import Pradanoia.services.JwtService;
 import io.jsonwebtoken.io.IOException;

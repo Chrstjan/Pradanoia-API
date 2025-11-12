@@ -1,4 +1,4 @@
-﻿package Pradanoia.repositories;
+package Pradanoia.repositories;
 
 import Pradanoia.entities.UserInfo;
 import org.springframework.data.jpa.repository.JpaRepository;

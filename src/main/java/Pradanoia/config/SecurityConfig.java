@@ -1,9 +1,10 @@
-﻿package Pradanoia.config;
+package Pradanoia.config;
 
 import Pradanoia.filters.JwtAuthFilter;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -37,17 +38,15 @@ public class SecurityConfig {
 
                 //Configures endpoint auth
                 .authorizeHttpRequests(auth -> auth
-                        //public endpoints
-                        .requestMatchers("/auth/welcome", "/auth/addNewUser", "/auth/generateToken").permitAll()
-
-                        //role-based endpoints
-                                .requestMatchers("/auth/user/**").hasAuthority("ROLE_USER")
-                                .requestMatchers("/auth/admin/**").hasAuthority("ROLE_ADMIN")
-
-                                //auth based endpoints
-                                .anyRequest().authenticated()
-
-                        )
+                        //Public endpoints
+                        .requestMatchers(HttpMethod.GET, "/auth/welcome").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/auth/addNewUser").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/auth/generateToken").permitAll()
+                        //Requires auth
+                        .requestMatchers("/auth/user/**").hasAuthority("ROLE_USER")
+                        .requestMatchers("/auth/admin/**").hasAuthority("ROLE_ADMIN")
+                        .anyRequest().authenticated()
+                )
                 //Stateless session
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 

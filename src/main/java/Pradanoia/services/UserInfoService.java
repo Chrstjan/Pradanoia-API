@@ -1,10 +1,10 @@
-﻿package Pradanoia.services;
+package Pradanoia.services;
 
 import Pradanoia.entities.UserInfo;
 import Pradanoia.repositories.UserInfoRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.userdetails.User;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -20,7 +20,7 @@ public class UserInfoService implements UserDetailsService {
     private final PasswordEncoder encoder;
 
     @Autowired
-    public UserInfoService(UserInfoRepository repository, PasswordEncoder encoder) {
+    public UserInfoService(UserInfoRepository repository, @Lazy PasswordEncoder encoder) {
         this.repository = repository;
         this.encoder = encoder;
     }
@@ -34,9 +34,7 @@ public class UserInfoService implements UserDetailsService {
             throw new UsernameNotFoundException("User with email: " + username + " was not found");
 
         //Converts into user entity model
-        UserInfo user = userInfo.get();
-        return new User(user.getEmail(), user.getPassword(),
-                user.getRoles());
+        return new UserInfoDetails(userInfo.get());
     }
 
     // #region user registering methods

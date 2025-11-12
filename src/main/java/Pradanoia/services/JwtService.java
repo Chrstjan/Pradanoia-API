@@ -1,4 +1,4 @@
-﻿package Pradanoia.services;
+package Pradanoia.services;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;

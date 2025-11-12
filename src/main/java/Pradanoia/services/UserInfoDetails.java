@@ -1,4 +1,4 @@
-﻿package Pradanoia.services;
+package Pradanoia.services;
 
 import Pradanoia.entities.UserInfo;
 
@@ -31,7 +31,7 @@ public class UserInfoDetails implements UserDetails {
 
     @Override
     public String getPassword() {
-        return "";
+        return password;
     }
 
     @Override
