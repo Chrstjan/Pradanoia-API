@@ -1,60 +1,61 @@
 package Pradanoia.config;
 
-import Pradanoia.filters.JwtAuthFilter;
+import Pradanoia.utils.CustomUserDetailService;
+import Pradanoia.utils.auth.JwtAuthEntryPoint;
+import Pradanoia.utils.auth.JwtAuthFilter;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Configuration
 @EnableWebSecurity
+@EnableWebMvc
+@EnableGlobalMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
-    private final JwtAuthFilter jwtAuthFilter;
-    private final UserDetailsService userDetailsService;
 
-    public SecurityConfig(JwtAuthFilter jwtAuthFilter, UserDetailsService userDetailsService) {
-        this.jwtAuthFilter = jwtAuthFilter;
-        this.userDetailsService = userDetailsService;
-    }
+    public static final String[] PUBLIC_URLS = {
+            "/api/v1/auth/**"
+    };
 
-    //Defines endpoint access rules & JWT filter setup
+    @Autowired
+    private CustomUserDetailService customUserDetailService;
+
+    @Autowired
+    private JwtAuthEntryPoint jwtAuthEntryPoint;
+
+    @Autowired
+    private JwtAuthFilter jwtAuthFilter;
+
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                //Disables CSRF
-                .csrf(csrf -> csrf.disable())
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http.csrf(csrf -> csrf.disable())
 
-                //Configures endpoint auth
-                .authorizeHttpRequests(auth -> auth
-                        //Public endpoints
-                        .requestMatchers(HttpMethod.GET, "/auth/welcome").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/auth/addNewUser").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/auth/generateToken").permitAll()
-                        //Requires auth
-                        .requestMatchers("/auth/user/**").hasAuthority("ROLE_USER")
-                        .requestMatchers("/auth/admin/**").hasAuthority("ROLE_ADMIN")
-                        .anyRequest().authenticated()
-                )
-                //Stateless session
-                .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                        .authorizeHttpRequests(auth -> auth
+                            .requestMatchers(PUBLIC_URLS).permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/public/**").permitAll()
+                                .anyRequest().authenticated()
+                        )
 
-                //auth provider
-                .authenticationProvider(authenticationProvider())
+                                .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthEntryPoint))
 
-                // JWT filer before spring default filer
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                                        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+
+        http.addFilterBefore(this.jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
     }
 
@@ -63,18 +64,8 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    //Configuration
     @Bean
-    public AuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setUserDetailsService(userDetailsService);
-        provider.setPasswordEncoder(passwordEncoder());
-        return provider;
-    }
-
-    //Auth manager
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-        return config.getAuthenticationManager();
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+        return authenticationConfiguration.getAuthenticationManager();
     }
 }
